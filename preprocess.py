@@ -2,7 +2,7 @@ import os
 import re
 import traceback
 import numpy as np
-import gpt_2_simple as gpt2
+# import gpt_2_simple as gpt2
 import lyricsgenius as lg
 
 
@@ -30,10 +30,10 @@ def download_model(model_name):
 def get_lyrics(artists, max_songs, lyrics_file):
     """
     Retrieves lyrics using Genius API wrapper (lyricsgenius),
-    saves the results in a text file 
+    saves the results in a text file
 
     :param artists: list of artists to find lyrics for
-    :param max_songs: number of songs to search for per artist 
+    :param max_songs: number of songs to search for per artist
     :param lyrics_file: all lyrics will be written to this file
     """
     for artist in artists:
@@ -44,13 +44,30 @@ def get_lyrics(artists, max_songs, lyrics_file):
             # compress the lyrics into a single string
             lyrics = [song.lyrics for song in songs_obj]
 
-            start_delim = "\n \n   <|startoftext|>   \n \n"
-            end_delim = "\n \n   <|endoftext|>   \n \n"
+            with open("original_lyrics.txt", "w") as original_file:
+                original_file.write("\n\n new song \n \n".join(lyrics))
+            print(len(lyrics))
+            # lyrics_file.write("\n\n new song \n \n".join(lyrics))
+
+            songs_w_delims = []
+            for song in lyrics:
+                song = song.replace("\n\n\n", "\n\n")
+                verses = song.split("\n\n")
+                new_verses = []
+                for verse in verses:
+                    lines = verse.split("\n")
+                    lines_w_delim = "<|LINE_BREAK|>\n".join(lines)
+                    new_verses.append(lines_w_delim)
+                lyrics_w_delims = "\n\n<|VERSE_BREAK|>\n\n".join(new_verses)
+                songs_w_delims.append(lyrics_w_delims)
+
+            start_delim = "\n \n<|startoftext|>\n \n"
+            end_delim = "\n \n<|endoftext|>\n \n"
 
             song_delim = end_delim + start_delim
 
             lyrics_file.write(start_delim)
-            lyrics_file.write(song_delim.join(lyrics))
+            lyrics_file.write(song_delim.join(songs_w_delims))
             lyrics_file.write(end_delim)
 
             print(f"Grabbed {len(lyrics)} songs from {artist}")
@@ -63,19 +80,19 @@ def main():
     get_lyrics(ARTISTS, 10, SAVED_LYRICS)
 
     # Download the model locally
-    model_name = "124M"
-    download_model(model_name)
+    # model_name = "124M"
+    # download_model(model_name)
 
-    sess = gpt2.start_tf_sess()
-    gpt2.finetune(sess,
-                  FILE_NAME,
-                  model_name=model_name,
-                  steps=1000)   # steps is max number of training steps
+    # sess = gpt2.start_tf_sess()
+    # gpt2.finetune(sess,
+    #   FILE_NAME,
+    #   model_name = model_name,
+    #   steps = 1000)   # steps is max number of training steps
 
-    gpt2.generate(sess, 
-                  prefix="<|startoftext|>",
-                  truncate="<|endoftext|>"
-                  )
+    # gpt2.generate(sess,
+    #   prefix="<|startoftext|>",
+    #   truncate="<|endoftext|>"
+    #   )
 
 
 if __name__ == '__main__':
