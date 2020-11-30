@@ -1,5 +1,8 @@
 import tensorflow as tf
+from tensorflow.keras import Model
 import numpy as np
+from preprocess import get_data
+import copy
 
 class Model(tf.keras.Model):
     def __init__(self, vocab_size):
@@ -36,7 +39,6 @@ class Model(tf.keras.Model):
         using LSTM and only the probabilites as a tensor and a final_state as a tensor when using GRU 
         """
         embeddings = tf.nn.embedding_lookup(self.E, inputs)
-        embeddings = tf.reshape(embeddings, (self.batch_size, self.window_size, self.embedding_size))
 
         output, mem_output, carry_output = self.lstm(embeddings, initial_state=initial_state)
         layer1out = self.dense1(output)
@@ -153,7 +155,8 @@ def generate_sentence(word1, length, vocab, model, sample_n=10):
         out_index = np.random.choice(top_n,p=n_logits)
 
         text.append(reverse_vocab[out_index])
-        next_input = [[out_index]]
+        next_input[0].append(out_index)
+        # next_input = [[out_index]]
 
     print(" ".join(text))
 
@@ -161,7 +164,9 @@ def generate_sentence(word1, length, vocab, model, sample_n=10):
 def main():
     # Pre-process and vectorize the data
     print("Loading data...")
-    train_data, test_data, vocab = get_data("../../data/train.txt", "../../data/test.txt")
+    train_data, test_data, vocab = get_data("lyrics.txt", "lyrics.txt")
+
+    print(len(vocab))
 
     # HINT: Please note that you are predicting the next word at each timestep, so you want to remove the last element
     # from train_x and test_x. You also need to drop the first element from train_y and test_y.
@@ -183,7 +188,8 @@ def main():
 
     # Set-up the training step
     print("Training...")
-    train(model, train_inputs, train_labels)
+    for i in range(5):
+        train(model, train_inputs, train_labels)
 
     # Set up the testing steps
     print("Testing...")
@@ -191,6 +197,10 @@ def main():
 
     # Print out perplexity 
     print("Perplexity is: " + str(perp))
+
+    generate_sentence("<|startoftext|>", 40, vocab, model)
+    generate_sentence("<|startoftext|>", 40, vocab, model)
+    generate_sentence("<|startoftext|>", 40, vocab, model)
 
     # BONUS: Try printing out various sentences with different start words and sample_n parameters 
     

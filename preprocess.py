@@ -8,16 +8,14 @@ import lyricsgenius as lg
 
 ACCESS_TOKEN = "V-JvkvIOA4D7PATFko0i8FfWP89pSper66mFCwFJ-BLSSE5B6vVD4RDt3MeWqFgP"
 genius = lg.Genius(ACCESS_TOKEN,
-                   verbose=False,
+                   verbose=True,
                    skip_non_songs=True,
                    excluded_terms=["(Remix)", "(Live)"],
                    remove_section_headers=True)
 
 # File to which lyrics are written to
 FILE_NAME = "lyrics.txt"
-SAVED_LYRICS = open(FILE_NAME, "w")
 
-# List of artists to scrape lyrics for
 ARTISTS = ['Drake']
 
 
@@ -25,6 +23,12 @@ def download_model(model_name):
     if not os.path.isdir(os.path.join("models", model_name)):
         print(f"Downloading {model_name} model...")
         gpt2.download_gpt2(model_name=model_name)
+
+def add_breaks(lyrics):
+    lyrics = lyrics.replace("\n\n\n", "\n\n")
+    verses_with_breaks = list(map(lambda x : x.replace("\n", " <|LINE_BREAK|>\n"), 
+                        lyrics.split("\n\n")))
+    return "\n<|VERSE_BREAK|>\n".join(verses_with_breaks)
 
 
 def get_lyrics(artists, max_songs, lyrics_file):
@@ -36,48 +40,55 @@ def get_lyrics(artists, max_songs, lyrics_file):
     :param max_songs: number of songs to search for per artist
     :param lyrics_file: all lyrics will be written to this file
     """
-    for artist in artists:
-        try:
-            songs_obj = (genius.search_artist(
-                artist, max_songs=max_songs, sort="title")).songs
+    with open(lyrics_file, 'w') as f:
+        for artist in artists:
+            try:
+                songs_obj = (genius.search_artist(
+                    artist, max_songs=max_songs, sort="title")).songs
 
-            # compress the lyrics into a single string
-            lyrics = [song.lyrics for song in songs_obj]
+                # compress the lyrics into a single string
+                songs = [song.lyrics for song in songs_obj]
 
-            with open("original_lyrics.txt", "w") as original_file:
-                original_file.write("\n\n new song \n \n".join(lyrics))
-            print(len(lyrics))
-            # lyrics_file.write("\n\n new song \n \n".join(lyrics))
+                songs_with_breaks = map(add_breaks, songs)
 
-            songs_w_delims = []
-            for song in lyrics:
-                song = song.replace("\n\n\n", "\n\n")
-                verses = song.split("\n\n")
-                new_verses = []
-                for verse in verses:
-                    lines = verse.split("\n")
-                    lines_w_delim = "<|LINE_BREAK|>\n".join(lines)
-                    new_verses.append(lines_w_delim)
-                lyrics_w_delims = "\n\n<|VERSE_BREAK|>\n\n".join(new_verses)
-                songs_w_delims.append(lyrics_w_delims)
+                start_delim = "\n\n<|startoftext|>\n\n"
+                end_delim = "\n\n<|endoftext|>\n\n"
+                song_delim = end_delim + start_delim
 
-            start_delim = "\n \n<|startoftext|>\n \n"
-            end_delim = "\n \n<|endoftext|>\n \n"
+                f.write(start_delim)
+                f.write(song_delim.join(songs_with_breaks))
+                f.write(end_delim)
 
-            song_delim = end_delim + start_delim
+                print(f"Grabbed {len(songs)} songs from {artist}")
+            except:
+                print(f"Exception at {artist}")
+                traceback.print_exc()
 
-            lyrics_file.write(start_delim)
-            lyrics_file.write(song_delim.join(songs_w_delims))
-            lyrics_file.write(end_delim)
+def get_data(train_file, test_file):
+    with open(train_file, 'r') as f:
+        train = f.read().strip().split()
 
-            print(f"Grabbed {len(lyrics)} songs from {artist}")
-        except:
-            print(f"Exception at {artist}")
-            traceback.print_exc()
+    with open(test_file, 'r') as f:
+        test = f.read().strip().split()
+
+    vocab = dict()
+    counter = 0
+    train_ind = []
+    for word in train:
+        if word not in vocab:
+            vocab[word] = counter
+            counter += 1
+        train_ind.append(vocab[word])
+    
+    test_ind = []
+    for word in test:
+        test_ind.append(vocab[word])
+    
+    return train_ind, test_ind, vocab
 
 
 def main():
-    get_lyrics(ARTISTS, 10, SAVED_LYRICS)
+    get_lyrics(ARTISTS, 100, "lyrics.txt")
 
     # Download the model locally
     # model_name = "124M"
