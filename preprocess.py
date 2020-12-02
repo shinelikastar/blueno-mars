@@ -14,17 +14,26 @@ genius = lg.Genius(ACCESS_TOKEN,
                    remove_section_headers=True)
 
 # File to which lyrics are written to
-FILE_NAME = "lyrics.txt"
-SAVED_LYRICS = open(FILE_NAME, "w")
-
-# List of artists to scrape lyrics for
-ARTISTS = ['Drake']
+SAVED_LYRICS = open("lyrics.txt", "w")
 
 
 def download_model(model_name):
+    """
+    Downloads model specified into local directory. 
+    Checks if it already exists. Otherwise, saves the model in a folder named "models".
+
+    :param model_name: name of GPT-2 model to download
+    """
     if not os.path.isdir(os.path.join("models", model_name)):
         print(f"Downloading {model_name} model...")
         gpt2.download_gpt2(model_name=model_name)
+
+
+def get_artists(artists_file):
+    with open(artists_file, "r") as f:
+        artists = f.read().splitlines()
+        print(artists)
+        return artists
 
 
 def get_lyrics(artists, max_songs, lyrics_file):
@@ -60,22 +69,23 @@ def get_lyrics(artists, max_songs, lyrics_file):
 
 
 def main():
-    get_lyrics(ARTISTS, 10, SAVED_LYRICS)
+    artists = get_artists("./artists.txt")
+    get_lyrics(artists, 10, SAVED_LYRICS)
 
     # Download the model locally
-    model_name = "124M"
-    download_model(model_name)
+    # model_name = "124M"
+    # download_model(model_name)
 
-    sess = gpt2.start_tf_sess()
-    gpt2.finetune(sess,
-                  FILE_NAME,
-                  model_name=model_name,
-                  steps=1000)   # steps is max number of training steps
+    # sess = gpt2.start_tf_sess()
+    # gpt2.finetune(sess,
+    #               FILE_NAME,
+    #               model_name=model_name,
+    #               steps=1000)   # steps is max number of training steps
 
-    gpt2.generate(sess, 
-                  prefix="<|startoftext|>",
-                  truncate="<|endoftext|>"
-                  )
+    # gpt2.generate(sess,
+    #               prefix="<|startoftext|>",
+    #               truncate="<|endoftext|>"
+    #               )
 
 
 if __name__ == '__main__':
