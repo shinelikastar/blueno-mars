@@ -13,12 +13,6 @@ genius = lg.Genius(ACCESS_TOKEN,
                    excluded_terms=["(Remix)", "(Live)"],
                    remove_section_headers=True)
 
-# File to which lyrics are written to
-FILE_NAME = "lyrics.txt"
-
-ARTISTS = ['Drake']
-
-
 def download_model(model_name):
     if not os.path.isdir(os.path.join("models", model_name)):
         print(f"Downloading {model_name} model...")
@@ -44,7 +38,7 @@ def get_lyrics(artists, max_songs, lyrics_file):
         for artist in artists:
             try:
                 songs_obj = (genius.search_artist(
-                    artist, max_songs=max_songs, sort="title")).songs
+                    artist, max_songs=max_songs, sort="popularity")).songs
 
                 # compress the lyrics into a single string
                 songs = [song.lyrics for song in songs_obj]
@@ -87,8 +81,45 @@ def get_data(train_file, test_file):
     return train_ind, test_ind, vocab
 
 
+def standardize(filename):
+    f = open(filename, 'r')
+    text = f.read()
+    print("it has been read")
+    with open("lowercase.txt", 'w') as out:
+        out.write(text.lower())
+    
+
+
+
 def main():
-    get_lyrics(ARTISTS, 100, "lyrics.txt")
+
+    print("reading vocab")
+        
+    with open("vocab.txt", 'r') as f:
+        vocab = set(f.read().strip().split())
+    vocab.add('\n')
+
+    def unk_line(line):
+        return " ".join(list(map(lambda x : x if x in vocab else "<|UNK|>", line.split(" "))))
+
+    print("reading text")
+    print('\n' in vocab)
+
+    new_text = []
+    with open("lowercase.txt", 'r') as f:
+        text = f.read().split("\n")
+    
+    print("unking")
+
+    new_text = "\n".join(list(map(unk_line, text)))
+
+    
+    print("writing")
+    with open("test.txt", 'w') as out:
+        out.write(new_text)
+
+
+
 
     # Download the model locally
     # model_name = "124M"

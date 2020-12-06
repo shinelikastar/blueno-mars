@@ -164,7 +164,7 @@ def generate_sentence(word1, length, vocab, model, sample_n=10):
 def main():
     # Pre-process and vectorize the data
     print("Loading data...")
-    train_data, test_data, vocab = get_data("lyrics.txt", "lyrics.txt")
+    train_data, test_data, vocab = get_data("lowercase.txt", "lowercase.txt")
 
     print(len(vocab))
 
