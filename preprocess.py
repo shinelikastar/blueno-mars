@@ -58,6 +58,29 @@ def get_lyrics(artists, max_songs, lyrics_file):
                 print(f"Exception at {artist}")
                 traceback.print_exc()
 
+def get_data_by_song(train_file):
+    delimiter = "<|endoftext|>"
+    with open(train_file, 'r') as f:
+        full_songs = [song + delimiter for song in f.read().strip().split(delimiter)]
+
+    train_data = list(map(lambda x : x.split(), full_songs))
+
+    vocab = dict()
+    counter = 0
+    train_ind = []
+    for song in train_data:
+        song_ind = []
+        for word in song:
+            if word not in vocab:
+                vocab[word] = counter
+                counter += 1
+            song_ind.append(vocab[word])
+        train_ind.append(song_ind)
+    
+    return train_ind, vocab
+    
+
+
 def get_data(train_file, test_file):
     with open(train_file, 'r') as f:
         train = f.read().strip().split()
@@ -79,16 +102,6 @@ def get_data(train_file, test_file):
         test_ind.append(vocab[word])
     
     return train_ind, test_ind, vocab
-
-
-def standardize(filename):
-    f = open(filename, 'r')
-    text = f.read()
-    print("it has been read")
-    with open("lowercase.txt", 'w') as out:
-        out.write(text.lower())
-    
-
 
 
 def main():

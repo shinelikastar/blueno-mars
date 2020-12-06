@@ -2,6 +2,7 @@ import tensorflow as tf
 from tensorflow.keras import Model
 import numpy as np
 from preprocess import get_data
+from preprocess import get_data_by_song
 import copy
 
 class Model(tf.keras.Model):
@@ -164,7 +165,9 @@ def generate_sentence(word1, length, vocab, model, sample_n=10):
 def main():
     # Pre-process and vectorize the data
     print("Loading data...")
-    train_data, test_data, vocab = get_data("lowercase.txt", "lowercase.txt")
+    ## train_data, test_data, vocab = get_data("lowercase.txt", "lowercase.txt")
+
+    train_data, vocab = get_data_by_song("data.txt")
 
     print(len(vocab))
 
@@ -178,10 +181,10 @@ def main():
     train_labels = copy.copy(train_data)
     train_labels = np.array(train_labels[1:])
 
-    test_inputs = copy.copy(test_data)
-    test_inputs = np.array(test_inputs[:-1])
-    test_labels = copy.copy(test_data)
-    test_labels = np.array(test_labels[1:])
+    # test_inputs = copy.copy(test_data)
+    # test_inputs = np.array(test_inputs[:-1])
+    # test_labels = copy.copy(test_data)
+    # test_labels = np.array(test_labels[1:])
 
     # initialize model and tensorflow variables
     model = Model(len(vocab))
